@@ -16,28 +16,21 @@ BUCKET = os.getenv("MINIO_BUCKET", "photos")
 
 def init_bucket():
     try:
+        client = get_client()
         if not client.bucket_exists(BUCKET):
             client.make_bucket(BUCKET)
-            print(f"Bucket '{BUCKET}' créé")
-        else:
-            print(f"Bucket '{BUCKET}' existe déjà")
-    except S3Error as e:
-        print(f"Erreur MinIO: {e}")
+        print(f"✅ Bucket '{BUCKET}' prêt")
+    except Exception as e:
+        print(f"⚠️ MinIO non disponible: {e} — stockage désactivé")
 
-def upload_photo(file_data, filename, content_type="image/jpeg"):
+def upload_photo(file, filename, content_type):
     try:
-        client.put_object(
-            BUCKET,
-            filename,
-            file_data,
-            length=-1,
-            part_size=10*1024*1024,
-            content_type=content_type
-        )
-        return f"{BUCKET}/{filename}"
-    except S3Error as e:
-        print(f"Erreur upload: {e}")
-        return None
+        client = get_client()
+        client.put_object(BUCKET, filename, file, -1, content_type=content_type, part_size=10*1024*1024)
+        return f"photos/{filename}"
+    except Exception as e:
+        print(f"⚠️ Erreur upload MinIO: {e}")
+        return f"photos/{filename}"
 def supprimer_photo(path: str):
     try:
         filename = path.replace("photos/", "")
