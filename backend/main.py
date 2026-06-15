@@ -42,7 +42,7 @@ async def upload_piece(
     if not path:
         raise HTTPException(status_code=500, detail="Erreur stockage photo")
 
-    resultat = ai.analyser_piece(image_bytes)
+    resultat = ai.analyser_photo(image_bytes)  # ✅ corrigé
 
     piece = models.Piece(
         photo_path=path,
@@ -84,7 +84,7 @@ async def upload_multiple(
                 erreurs.append({"fichier": file.filename, "erreur": "erreur stockage"})
                 continue
 
-            resultat = ai.analyser_piece(image_bytes)
+            resultat = ai.analyser_photo(image_bytes)  # ✅ corrigé
 
             piece = models.Piece(
                 photo_path=path,
@@ -109,6 +109,7 @@ async def upload_multiple(
             })
 
         except Exception as e:
+            print(f"❌ Erreur: {e}")
             erreurs.append({"fichier": file.filename, "erreur": str(e)})
 
     return {
@@ -145,7 +146,8 @@ def get_photo(piece_id: int, db: Session = Depends(database.get_db)):
 
     filename = piece.photo_path.split("/")[-1]
     try:
-        response = storage.client.get_object("photos", filename)
+        c = storage.get_client()
+        response = c.get_object("photos", filename)
         return StreamingResponse(response, media_type="image/jpeg")
-    except S3Error:
+    except Exception:
         raise HTTPException(status_code=404, detail="Photo introuvable")
