@@ -142,8 +142,12 @@ def get_photo(piece_id: int, db: Session = Depends(database.get_db)):
     piece = db.query(models.Piece).filter(models.Piece.id == piece_id).first()
     if not piece:
         raise HTTPException(status_code=404, detail="Pièce introuvable")
-    filename = piece.photo_path.split("/")[-1]
-    bucket = os.getenv("MINIO_BUCKET", "photos")
-    endpoint = os.getenv("MINIO_ENDPOINT", "")
-    url = f"https://{endpoint}/file/{bucket}/{filename}"
-    return RedirectResponse(url=url)
+    try:
+        from datetime import timedelta
+        c = storage.get_client()
+        filename = piece.photo_path.split("/")[-1]
+        bucket = os.getenv("MINIO_BUCKET", "photos")
+        url = c.presigned_get_object(bucket, filename, expires=timedelta(hours=24))
+        return RedirectResponse(url=url)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Photo introuvable: {e}")
