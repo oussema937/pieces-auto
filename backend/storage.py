@@ -17,7 +17,7 @@ def get_client():
             endpoint,
             access_key=os.getenv("MINIO_ACCESS_KEY"),
             secret_key=os.getenv("MINIO_SECRET_KEY"),
-            secure=False
+            secure=os.getenv("MINIO_SECURE", "false").lower() == "true"
         )
     return _client
 

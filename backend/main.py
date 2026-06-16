@@ -143,11 +143,8 @@ def get_photo(piece_id: int, db: Session = Depends(database.get_db)):
     piece = db.query(models.Piece).filter(models.Piece.id == piece_id).first()
     if not piece:
         raise HTTPException(status_code=404, detail="Pièce introuvable")
-
     filename = piece.photo_path.split("/")[-1]
-    try:
-        c = storage.get_client()
-        response = c.get_object("photos", filename)
-        return StreamingResponse(response, media_type="image/jpeg")
-    except Exception:
-        raise HTTPException(status_code=404, detail="Photo introuvable")
+    bucket = os.getenv("MINIO_BUCKET", "photos")
+    endpoint = os.getenv("MINIO_ENDPOINT", "")
+    url = f"https://{endpoint}/file/{bucket}/{filename}"
+    return {"url": url}
