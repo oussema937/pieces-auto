@@ -1,12 +1,11 @@
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from typing import List, Annotated
 from minio.error import S3Error
 import database, models, storage, ai
-import uuid
-import io
+import uuid, io, os
 
 models.Base.metadata.create_all(bind=database.engine)
 storage.init_bucket()
@@ -147,4 +146,4 @@ def get_photo(piece_id: int, db: Session = Depends(database.get_db)):
     bucket = os.getenv("MINIO_BUCKET", "photos")
     endpoint = os.getenv("MINIO_ENDPOINT", "")
     url = f"https://{endpoint}/file/{bucket}/{filename}"
-    return {"url": url}
+    return RedirectResponse(url=url)
